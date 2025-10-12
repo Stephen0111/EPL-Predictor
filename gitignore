@@ -1,0 +1,12 @@
+# .gitignore
+
+# Environment variables
+.env
+# Database files 
+*.db
+# Python environment files
+__pycache__/
+venv/
+# ML Model files 
+/models/*.joblib
+/kaggle_data/
