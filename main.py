@@ -7,7 +7,7 @@ import json
 import numpy as np
 import pandas as pd
 from typing import Optional, Dict, Any, List
-from fastapi import FastAPI, Request, Depends, HTTPException
+from fastapi import FastAPI, Request, Depends, HTTPException, Body
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
@@ -404,35 +404,32 @@ def get_current_table(db: Client = Depends(get_db)): # CHANGED dependency type t
 LABEL_ENCODER = joblib.load("models/predictor_label_encoder.joblib") 
 @app.post("/api/predict", response_model=TeamPrediction)
 def predict_match(
-    home_team: str, 
-    away_team: str, 
-    features: TeamPredictionFeatures
+    home_team: str,
+    away_team: str,
+    features: TeamPredictionFeatures = Body(...)
 ):
     """Makes a prediction using the loaded EPL ML model."""
     global PREDICTOR_MODEL, SCALER
-    
+
     if PREDICTOR_MODEL is None or SCALER is None:
         raise HTTPException(status_code=500, detail="Prediction model not loaded.")
 
     # Prepare input data
-    input_df = pd.DataFrame([[features.home_pts_last_5, features.away_pts_last_5]],
-                            columns=['home_pts_last_5', 'away_pts_last_5'])
-    
-    # Scale the input data using the saved scaler
+    input_df = pd.DataFrame(
+        [[features.home_pts_last_5, features.away_pts_last_5]],
+        columns=["home_pts_last_5", "away_pts_last_5"]
+    )
+
+    # Scale and predict
     scaled_input = SCALER.transform(input_df)
-    
-    # Predict probabilities and class
-    numeric_classes = PREDICTOR_MODEL.classes_  # e.g., [0,1,2]
+    numeric_classes = PREDICTOR_MODEL.classes_
     probabilities = PREDICTOR_MODEL.predict_proba(scaled_input)[0]
     predicted_numeric_class = PREDICTOR_MODEL.predict(scaled_input)[0]
 
-    # Decode numeric labels to 'H','D','A'
+    # Decode numeric labels to H, D, A
     classes = LABEL_ENCODER.inverse_transform(numeric_classes)
     predicted_class = LABEL_ENCODER.inverse_transform([predicted_numeric_class])[0]
-
-    # Map classes to human-readable descriptions
-    result_map = {'H': f"{home_team} Win", 'D': "Draw", 'A': f"{away_team} Win"}
-
+    result_map = {"H": f"{home_team} Win", "D": "Draw", "A": f"{away_team} Win"}
     prob_map = dict(zip(classes, probabilities))
 
     return TeamPrediction(
