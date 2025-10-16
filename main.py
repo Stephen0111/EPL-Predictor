@@ -403,6 +403,7 @@ def get_current_table(db: Client = Depends(get_db)): # CHANGED dependency type t
 
 LABEL_ENCODER = joblib.load("models/predictor_label_encoder.joblib") 
 @app.post("/api/predict", response_model=TeamPrediction)
+global PREDICTOR_MODEL, SCALER
 def predict_match(
     home_team: str,
     away_team: str,
