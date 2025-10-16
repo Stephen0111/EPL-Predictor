@@ -270,14 +270,36 @@ def load_all_models():
         logger.error("Skipping all database operations due to failed Firestore initialization.")
 
     # 2. Load EPL ML model and scaler (Unchanged)
+    # 2. Load EPL ML model and scaler (Unchanged)
+try:
+    import xgboost as xgb
+
+    PREDICTOR_MODEL = joblib.load(MODEL_PATH)
+    SCALER = joblib.load(SCALER_PATH)
+
+    # --- PATCH FOR XGBOOST VERSION COMPATIBILITY ---
+    if not hasattr(PREDICTOR_MODEL, "use_label_encoder"):
+        setattr(PREDICTOR_MODEL, "use_label_encoder", False)
+
     try:
-        PREDICTOR_MODEL = joblib.load(MODEL_PATH)
-        SCALER = joblib.load(SCALER_PATH)
-        logger.info("EPL Machine Learning model and scaler loaded successfully.")
-    except FileNotFoundError:
-        logger.warning("EPL WARNING: Model files not found. Run train_model.py first.")
-    except Exception as e:
-        logger.error(f"EPL ERROR: Failed to load ML model: {e}")
+        # Ensure model parameters are valid for new XGBoost
+        PREDICTOR_MODEL.get_xgb_params()
+    except Exception:
+        booster = getattr(PREDICTOR_MODEL, "get_booster", lambda: None)()
+        if booster:
+            safe_model = xgb.XGBClassifier()
+            safe_model._Booster = booster
+            safe_model.classes_ = np.array(["Home Win", "Draw", "Away Win"])
+            PREDICTOR_MODEL = safe_model
+            logger.warning("EPL model rebuilt for XGBoost compatibility.")
+
+    logger.info("EPL Machine Learning model and scaler loaded successfully.")
+
+except FileNotFoundError:
+    logger.warning("EPL WARNING: Model files not found. Run train_model.py first.")
+except Exception as e:
+    logger.error(f"EPL ERROR: Failed to load ML model: {e}")
+
 
     # 3. Load Financial Models for all top tickers (Unchanged)
     for ticker in TOP_TICKERS:
