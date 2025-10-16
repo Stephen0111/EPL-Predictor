@@ -1,72 +1,66 @@
+
 import os
-from sqlalchemy import create_engine, Column, Integer, String, Float
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+import firebase_admin
+from firebase_admin import credentials, firestore
+from dotenv import load_dotenv
 
-# --- Database Setup ---
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SQLALCHEMY_DATABASE_URL = "sqlite:///./epl_data.db"
+load_dotenv()
 
-# Create the SQLAlchemy engine
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
+# --- Firestore Setup ---
 
+# Global variable to hold the Firestore client
+db = None
 
 def init_db():
-    Base.metadata.create_all(bind=engine)
+    """Initializes the Firebase Admin SDK and sets up the Firestore client."""
+    global db
+    
+    # 1. Get the path to the credentials file from environment variables
+    credentials_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
+    
+    if not credentials_path or not os.path.exists(credentials_path):
+        print(f"FATAL ERROR: FIREBASE_CREDENTIALS_PATH not found or file missing at: {credentials_path}")
+        print("Please follow the setup instructions to create and configure your Firebase credentials.")
+        return False
+    
+    # Check if Firebase is already initialized to prevent re-initialization error
+    if not firebase_admin._apps:
+        try:
+            # 2. Initialize the app with the service account credentials
+            cred = credentials.Certificate(credentials_path)
+            firebase_admin.initialize_app(cred)
+            print("Firebase Admin SDK initialized successfully.")
+            
+        except Exception as e:
+            print(f"ERROR: Failed to initialize Firebase Admin SDK: {e}")
+            return False
 
+    # 3. Get the Firestore client instance
+    db = firestore.client()
+    print("Firestore client established.")
+    return True
 
-# Create the Base class
-class Base(DeclarativeBase):
-    pass
-
-# Create the SessionLocal class
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():
-    """Dependency to provide a DB session."""
-    db = SessionLocal()
+    """
+    Dependency function to provide the Firestore client.
+    Unlike SQLAlchemy, Firestore client is stateless and can be yielded directly.
+    """
+    if db is None:
+        if not init_db():
+            # Raise an error if initialization failed
+            raise Exception("Database initialization failed. Check FIREBASE_CREDENTIALS_PATH.")
+            
     try:
         yield db
     finally:
-        db.close()
+        # No session closing needed for the global Firestore client
+        pass
 
-# --- Database Models ---
+# --- Data Schemas (Not actual models, just collection names for clarity) ---
 
-class EPLMatch(Base):
-    """Represents historical or current match data for ML training."""
-    __tablename__ = "epl_matches"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    season = Column(Integer, index=True)
-    match_date = Column(String)
-    home_team = Column(String)
-    away_team = Column(String)
-    full_time_home_goals = Column(Integer)
-    full_time_away_goals = Column(Integer)
-    result = Column(String) # 'H' (Home Win), 'D' (Draw), 'A' (Away Win)
+EPL_MATCHES_COLLECTION = "epl_matches"
+EPL_TABLE_COLLECTION = "epl_tables"
 
-    # Features derived for ML
-    home_pts_last_5 = Column(Integer)
-    away_pts_last_5 = Column(Integer)
-
-class EPLTable(Base):
-    """Represents the current or historical league table standings."""
-    __tablename__ = "epl_tables"
-
-    id = Column(Integer, primary_key=True, index=True)
-    season = Column(Integer, index=True)
-    position = Column(Integer)
-    team = Column(String)
-    played = Column(Integer)
-    points = Column(Integer)
-    goal_difference = Column(Integer)
-    
-def init_db():
-    """Initializes the database and creates tables if they don't exist."""
-    print("Initializing database...")
-    Base.metadata.create_all(bind=engine)
-
-if __name__ == '__main__':
-    # You can run this file directly to create the database file
-    init_db()
+# The EPLMatch and EPLTable classes from the old database.py are no longer needed,
+# as Firestore uses dynamic documents (dictionaries/JSON) rather than ORM classes.

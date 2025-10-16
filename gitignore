@@ -7,6 +7,9 @@
 # Python environment files
 __pycache__/
 venv/
-# ML Model files 
+
+*.pyc
+.env
+serviceAccountKey.json
 
 /kaggle_data/
