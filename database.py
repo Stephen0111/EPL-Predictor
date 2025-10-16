@@ -3,6 +3,8 @@ import os
 import json
 import logging
 from typing import Iterator
+# We need to import HTTPException to use it in the dependency function
+from fastapi import HTTPException 
 
 # Import Firebase Admin SDK components
 import firebase_admin
@@ -56,6 +58,7 @@ def init_db():
 
         # Initialize the app if it hasn't been already
         if not firebase_admin._apps:
+            # If cred is None here, it will attempt ADC
             firebase_admin.initialize_app(credential=cred)
             logger.info("Firebase Admin SDK initialized successfully.")
         
@@ -75,14 +78,14 @@ def get_db() -> Iterator[Client]:
     
     Raises HTTPException if the database failed to initialize.
     """
+    global _db_client
+    
     if _db_client is None:
         logger.error("Attempted to access database before successful initialization.")
-        # In a production setup, you would raise an HTTPException here.
-        # However, for startup testing, we'll yield None and let the endpoint handle it.
-        # raise HTTPException(status_code=503, detail="Database service unavailable.")
-        yield None
+        # FIX: Raise HTTPException instead of yielding None to prevent Internal Server Errors
+        raise HTTPException(status_code=503, detail="Database service unavailable. Initialization failed.")
     else:
         # Yield the client instance to the endpoint
         yield _db_client
-        # Cleanup (optional, but good practice if using sessions, though Firestore Client is connectionless)
+        # Cleanup (pass is fine, as Firestore Client is connectionless)
         pass
