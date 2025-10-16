@@ -422,9 +422,14 @@ def predict_match(
 
     # Scale and predict
     scaled_input = SCALER.transform(input_df)
-    numeric_classes = PREDICTOR_MODEL.classes_
+    
     probabilities = PREDICTOR_MODEL.predict_proba(scaled_input)[0]
     predicted_numeric_class = PREDICTOR_MODEL.predict(scaled_input)[0]
+    
+    if hasattr(PREDICTOR_MODEL, "classes_"):
+     numeric_classes = PREDICTOR_MODEL.classes_
+    else:
+        numeric_classes = np.array(["H", "D", "A"])
 
     # Decode numeric labels to H, D, A
     classes = LABEL_ENCODER.inverse_transform(numeric_classes)
