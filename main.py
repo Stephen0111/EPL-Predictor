@@ -69,7 +69,7 @@ class TeamPrediction(BaseModel):
     probabilities: Dict[str, float]
     prediction: str
 
-
+FIREBASE_CREDENTIALS_VAR = "FIREBASE_CREDENTIALS_JSON" 
 # --- Model Loading & Database Configuration ---
 
 # EPL Model Configuration (Unchanged)
