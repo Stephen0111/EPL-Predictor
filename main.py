@@ -153,7 +153,7 @@ def update_league_standings(api_token: str, db: Client): # ADDED db: Client
     return None
 
 
-def update_current_season_matches(api_token: str, db: Client): # ADDED db: Client
+def update_current_season_matches(api_token: str, db: Client):
     """
     Fetches finished current season matches and updates the EPLMatch collection.
     """
@@ -193,17 +193,18 @@ def update_current_season_matches(api_token: str, db: Client): # ADDED db: Clien
                 
                 result = 'H' if home_goals > away_goals else ('A' if home_goals < away_goals else 'D')
                 
-                # --- FIRESTORE CHANGE: Check for existing match ---
-                # Use a query filter for uniqueness check
-                existing_match_query = matches_ref.where(filter=("home_team", "==", home_team))\
+                # --- FIXED: Correct Firestore query syntax ---
+                existing_match_query = matches_ref\
+                    .where("home_team", "==", home_team)\
                     .where("away_team", "==", away_team)\
-                    .where("match_date", "==", match_date).limit(1).get()
+                    .where("match_date", "==", match_date)\
+                    .limit(1)\
+                    .get()
                 
-                if existing_match_query: # if list is not empty
+                if existing_match_query:  # if list is not empty
                     continue
                 
-                # --- FIRESTORE CHANGE: Get team points from EPLTable collection ---
-                # Get current team points using the team name as document ID
+                # --- Get team points from EPLTable collection ---
                 home_standing_doc = db.collection(EPL_TABLE_COLLECTION).document(home_team.replace(" ", "_")).get()
                 away_standing_doc = db.collection(EPL_TABLE_COLLECTION).document(away_team.replace(" ", "_")).get()
                 
@@ -223,7 +224,7 @@ def update_current_season_matches(api_token: str, db: Client): # ADDED db: Clien
                     "away_pts_last_5": away_pts
                 }
                 
-                # Use a compound key for the document ID (optional, or use auto-ID)
+                # Use a compound key for the document ID
                 doc_id = f"{home_team}-{away_team}-{match_date.split('T')[0]}"
                 batch.set(matches_ref.document(doc_id.replace(" ", "_")), match_doc)
                 matches_saved += 1
@@ -240,6 +241,7 @@ def update_current_season_matches(api_token: str, db: Client): # ADDED db: Clien
         logger.error(f"[Startup] Error fetching matches: {e}")
     except Exception as e:
         logger.error(f"[Startup] Error updating matches: {e}")
+
 
 
 # Load all models (EPL and Financial) on application startup
