@@ -1,19 +1,16 @@
-FastAPI and Server
-
-fastapi
-uvicorn
-jinja2 
-Database (SQLAlchemy with SQLite driver)
-
-sqlalchemy
-sqlmodel
-Data Handling and Machine Learning
-
-requests   # For fetching data from external APIs
-pandas     # For data processing
-scikit-learn # For training the prediction model
-joblib     # For saving/loading the trained model
-numpy
-yfinance
-ta
-xgboost
+fastapi==0.104.0
+uvicorn[standard]==0.23.0
+jinja2==3.1.2
+sqlalchemy==2.0.20
+sqlmodel==0.0.9
+requests==2.31.0
+pandas==2.1.1
+scikit-learn==1.3.2
+joblib==1.3.2
+numpy==1.26.0
+yfinance==0.2.33
+ta==0.10.2
+xgboost==1.8.4
+firebase-admin==6.5.0
+google-cloud-firestore==3.14.2
+python-dotenv==1.0.0
