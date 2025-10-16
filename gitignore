@@ -10,6 +10,6 @@ venv/
 
 *.pyc
 .env
-serviceAccountKey.json
+cruise-ef6e6-firebase-adminsdk-vr9tp-513e81b62f.json
 
 /kaggle_data/
