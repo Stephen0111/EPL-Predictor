@@ -25,6 +25,8 @@ import ta
 
 # Load environment variables
 load_dotenv()
+# Initialize database on startup 
+init_db()
 MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models')
 # --- Internal Imports (Now using Firestore structure) ---
 from database import init_db, get_db, EPL_MATCHES_COLLECTION, EPL_TABLE_COLLECTION 
@@ -34,8 +36,7 @@ from database import init_db, get_db, EPL_MATCHES_COLLECTION, EPL_TABLE_COLLECTI
 
 app = FastAPI(title="EPL/Financial Predictor API")
 MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models')
-# Initialize database on startup 
-init_db()
+
 
 # Configure Templates for serving the frontend HTML
 templates = Jinja2Templates(directory="templates")
@@ -425,12 +426,12 @@ def get_current_table(db: Client = Depends(get_db)): # CHANGED dependency type t
 
 LABEL_ENCODER = joblib.load("models/predictor_label_encoder.joblib") 
 @app.post("/api/predict", response_model=TeamPrediction)
-
 def predict_match(
-    home_team: str,
-    away_team: str,
+    home_team: str = Query(...),
+    away_team: str = Query(...),
     features: TeamPredictionFeatures = Body(...)
 ):
+
     global PREDICTOR_MODEL, SCALER
     
     
