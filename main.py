@@ -403,12 +403,13 @@ def get_current_table(db: Client = Depends(get_db)): # CHANGED dependency type t
 
 LABEL_ENCODER = joblib.load("models/predictor_label_encoder.joblib") 
 @app.post("/api/predict", response_model=TeamPrediction)
-global PREDICTOR_MODEL, SCALER
+
 def predict_match(
     home_team: str,
     away_team: str,
     features: TeamPredictionFeatures = Body(...)
 ):
+    global PREDICTOR_MODEL, SCALER
     if not hasattr(PREDICTOR_MODEL, "classes_"):
         # Assume 3-class problem: Home win, Draw, Away win
         PREDICTOR_MODEL.classes_ = np.array(["Home Win", "Draw", "Away Win"])
