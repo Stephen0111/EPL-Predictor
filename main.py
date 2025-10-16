@@ -410,11 +410,13 @@ def predict_match(
     features: TeamPredictionFeatures = Body(...)
 ):
     global PREDICTOR_MODEL, SCALER
+    
+    
     if not hasattr(PREDICTOR_MODEL, "classes_"):
         # Assume 3-class problem: Home win, Draw, Away win
         PREDICTOR_MODEL.classes_ = np.array(["Home Win", "Draw", "Away Win"])
     """Makes a prediction using the loaded EPL ML model."""
-    global PREDICTOR_MODEL, SCALER
+    
 
     if PREDICTOR_MODEL is None or SCALER is None:
         raise HTTPException(status_code=500, detail="Prediction model not loaded.")
